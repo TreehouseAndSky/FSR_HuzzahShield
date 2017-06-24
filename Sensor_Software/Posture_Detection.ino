@@ -71,12 +71,6 @@ const int COL_BPin = 2;
 const int COL_INHPin = 0;
 
 int matrix[3][3];
-uint8_t matrixarray[15];
-
-union Data {
-  int i[15];
-  byte* b;
-};
 
 void setup_wifi() {
 
@@ -101,6 +95,12 @@ void setup_wifi() {
   Serial.println(WiFi.localIP());
 }
 
+
+
+/*
+ * Callback function for the MQTT library, this function
+ * gets called when a message is published in a topic we subscribed to
+ */
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -120,7 +120,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 
 }
-
+/*
+ * Wifi connection function
+ */
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
@@ -145,6 +147,9 @@ void reconnect() {
   }
 }
 
+/*
+ * Switch the row we're measuring on. This drives the row MUX (CD
+ */
 void switch_row(int row) {
   switch (row) {
     case 0 :
@@ -228,21 +233,21 @@ void switch_column(int column) {
 }
 
 void readPoints() {
-  int i,j,k;
   int sensorvalue;
   
-  for(i=1; i<=4; i++) //total delay = 4.(4.(10+4.1)) ms = 64.4ms = 256ms
+  for(int i=1; i<=4; i++) //total delay = 4.(4.(10+4.1)) ms = 64.4ms = 256ms
   {
     switch_row(i);
-    for(j=1; j<=4; j++)
+    for(int j=1; j<=4; j++)
     {
       switch_column(j);
-      delay(10); //todo: insert settling time;
+      delay(10); //todo: test settling time;
       sensorvalue = 0;
-      
-      for(k=0; k<5; k++)
+
+      //Take an average of 5 analog reads
+      for(int k=0; k<5; k++)
       {
-        #ifndef DEBUG
+        #ifdef DEBUG
         sensorvalue += random(0,1025);
         #else
         sensorvalue += analogRead(A0);
@@ -261,6 +266,34 @@ void readPoints() {
     };
   };
   Serial.println("Readout complete");
+}
+
+void sendPoints(){
+  Serial.println("Sending pressure matrix");
+  
+  // Prepare a JSON payload string
+  String payload = "{";
+  payload += "\"pressure\": [";
+  for(int i=1; i<=4; i++){
+      payload += "{\"row\":";
+      payload += String(i);
+      payload += ",\"column\":[";
+      for(int j=1; j<=4; j++){
+        payload += String(matrix[i][j]);
+        if(j != 4)
+          payload += ",";
+      };
+      payload += "]}";
+      if (i != 4)
+        payload += ",";
+  };
+  payload += "]}";
+  
+  // Send payload
+  char attributes[200];
+  payload.toCharArray(attributes, 200);
+  client.publish(outTopic, attributes);
+  Serial.println(attributes);
 }
 
 void setup() {
@@ -285,21 +318,15 @@ void loop() {
     reconnect();
   }
   client.loop();
-  //readPoints();
+
+  //turn off wifi
+  readPoints();
 
   long now = millis();
   if (now - lastMsg > 5000) {
+    //turn on wifi
     lastMsg = now;
     ++value;
-    Serial.print("Publish message: ");
-    /*union Data data;
-    
-    for(int i=0; i<4; i++) {
-      for(int j=0; j<4; j++){
-        Serial.println(matrix[i][j]);
-        data.i[i*4+j] = matrix[i][j];
-      };
-    };
-    //client.publish(outTopic, data.b, sizeof(data));*/
+    sendPoints();
   }
 }
