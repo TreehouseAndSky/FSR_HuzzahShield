@@ -17,8 +17,16 @@ def on_message(client, userdata, msg):
 
     try:
         data = json.loads(str(msg.payload))
+        row0 = data["row0"]
+        row1 = data["row1"]
+        row2 = data["row2"]
+        row3 = data["row3"]
+        
+        
 
         print "TID = {0} is currently at {1}, {2}".format(data['tid'], data['lat'], data['lon'])
+        print "Pressure Matrix = \n"
+        print ""
     except:
         print "Cannot decode data on topic {0}".format(topic)
 
