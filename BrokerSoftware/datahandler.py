@@ -2,6 +2,11 @@
 
 import paho.mqtt.client as mqtt
 import json
+import numpy
+from pprint import pprint
+
+# Global variables
+pmatrix = numpy.zeros(shape=(4,4))
 
 # The callback for when the client successfully connects to the broker
 def on_connect(client, userdata, rc):
@@ -22,11 +27,14 @@ def on_message(client, userdata, msg):
         row2 = data["row2"]
         row3 = data["row3"]
         
+        pmatrix[0] = row0
+        pmatrix[1] = row1
+        pmatrix[2] = row2
+        pmatrix[3] = row3
         
-
-        print "TID = {0} is currently at {1}, {2}".format(data['tid'], data['lat'], data['lon'])
-        print "Pressure Matrix = \n"
-        print ""
+        pprint("Pressure Matrix = ")
+        pprint(pmatrix)
+        
     except:
         print "Cannot decode data on topic {0}".format(topic)
 
