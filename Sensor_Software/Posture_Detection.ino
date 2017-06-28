@@ -235,10 +235,10 @@ void switch_column(int column) {
 void readPoints() {
   int sensorvalue;
   
-  for(int i=1; i<=4; i++) //total delay = 4.(4.(10+4.1)) ms = 64.4ms = 256ms
+  for(int i=0; i<=3; i++) //total delay = 4.(4.(10+4.1)) ms = 64.4ms = 256ms
   {
     switch_row(i);
-    for(int j=1; j<=4; j++)
+    for(int j=0; j<=3; j++)
     {
       switch_column(j);
       delay(10); //todo: test settling time;
@@ -271,23 +271,28 @@ void readPoints() {
 void sendPoints(){
   Serial.println("Sending pressure matrix");
   
-  // Prepare a JSON payload string
+//	 Prepare a JSON payload string of format
+//	{
+//	    "row0":[1001,1002,1003,1004],
+//	    "row1":[1005,1006,1007,1008],
+//	    "row2":[1009,1010,1011,1012],
+//	    "row3":[1013,1014,1015,1016]
+//	}
   String payload = "{";
-  payload += "\"pressure\": [";
-  for(int i=1; i<=4; i++){
-      payload += "{\"row\":";
+  for(int i=0; i<=3; i++){
+      payload += "\"row";
       payload += String(i);
-      payload += ",\"column\":[";
-      for(int j=1; j<=4; j++){
+	  payload += "\":[";
+      for(int j=0; j<=3; j++){
         payload += String(matrix[i][j]);
-        if(j != 4)
+        if(j != 3)
           payload += ",";
       };
-      payload += "]}";
-      if (i != 4)
+      payload += "]";
+      if (i != 3)
         payload += ",";
   };
-  payload += "]}";
+  payload += "}";
   
   // Send payload
   char attributes[200];
